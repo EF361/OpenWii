@@ -1,73 +1,117 @@
-# 🕹 OpenWii
+# OpenWii
 
-Your phone is the controller. Your computer runs the games.
+Motion-controlled games where your phone is the remote.
 
-Scan a QR code to turn your phone into a motion controller—no app or extra
-hardware required. Up to four phones can join the same computer; player counts
-vary by game.
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Quick start
+<!-- Screenshot: add docs/screenshot.png -->
 
-Requires **Node.js 22+**, **OpenSSL**, a computer browser with WebGL 2, and a
-motion-capable phone browser on the **same Wi-Fi**.
+## Overview
 
-```bash
-git clone https://github.com/pattssun/OpenWii.git
-cd OpenWii
-npm ci
-npm start
-```
+OpenWii transforms your smartphone into a motion-sensing game controller for browser-based games hosted on your computer. The system uses real-time inputs from smartphone sensors to control gameplay, enabling a dynamic multiplayer experience with rich visuals and responsive control mechanics.
 
-1. Open **https://localhost:8443/** on your computer. On macOS, Chrome opens
-   automatically.
-2. Scan the launcher's QR code with your phone. Accept the local self-signed
-   certificate, tap **Enable motion sensors**, and allow access.
-3. Choose a game and follow its controls. Stop the server with **Ctrl+C**.
+## Features
 
-**Phone motion requires HTTPS.** Use the QR code or the terminal's **Phone remote**
-address, not `localhost` on your phone. OpenWii is designed for shared local-network
-play.
+- **Smartphone Controller**: Use your phone's motion sensors to interact with games on your computer.
+- **Local Node Server**: Hosts games and coordinates inputs and outputs over a local network (`server.js`).
+- **Multiplayer Support**: Slots phones into player roles dynamically for group gaming sessions.
+- **Real-Time Sensor Integration**: Streams device orientation and motion data with low latency (`core/orientation.js`, `core/pointer.js`).
+- **Game Calibration**: Tailor input sensitivity to individual devices with drift correction and axis alignment (`core/calibration.js`).
+- **Game Library**: A variety of games like Mario Kart, Alien Attack, and Drawing with dedicated logic modules in the `games` folder.
+- **Assets Pipeline**: Build and manage game assets with scripts like `build:kart-assets`.
+- **Cert and HTTPS Support**: Generates local certificates for secure browser connections (`scripts/gen-cert.js`).
 
-## Games
-
-| Game | How to play | Players |
-| --- | --- | --- |
-| 🏎️ **[Mario Kart](games/mario-kart/README.md)** | Hold your phone sideways to steer, drift, boost and use items. The linked guide covers controls and included assets. | 1 human + 7 CPU racers |
-| 🍉 **[Fruit Ninja](games/fruit-ninja/)** | Swing to slice fruit, dodge bombs and build combos. | Up to 4 |
-| 👾 **[Alien Attack](games/alien-attack/)** | Tilt to fly and press A to fire. | 1 |
-| 🎯 **[Shooting Range](games/shooting-range/)** | Point and press A to hit targets against the clock. | 1 |
-| 🎨 **[Sketch](games/drawing/)** | Point and press A to draw. Choose colors, brushes and an eraser. | 1 |
-
-## How it works
+## How It Works
 
 ```mermaid
 flowchart TD
-    phone["📱 Phone<br/>a web page acting as the Wii remote<br/><code>public/controller.*</code>"]
-    relay["🔀 Node relay<br/>forwards packets, tags players P1 to P4<br/><code>server.js</code>"]
-    browser["🖥 Browser tab<br/>Wii menu + games + motion engine<br/><code>public/menu.js · games/ · core/</code>"]
-    phone -- "motion 60/s + buttons" --> relay
-    relay -- "same stream, slot-tagged" --> browser
-    browser -. "rumble, per player" .-> phone
+    A["Phone Motion Sensors"] -->|"streams data"| B["Node.js Relay Server (server.js)"]
+    B -->|"assigns players"| C["Game Logic (e.g., games/kart/logic.js)"]
+    C -->|"renders graphics"| D["Browser Game on Computer"]
+    D -->|"feedback"| B
 ```
 
-A real Wii needs an IR sensor bar to know where the remote points; OpenWii replaces it with pure software. The
-engine learns each phone's gyro axis conventions from its own data at runtime
-(they genuinely differ between devices), heals drift back toward the true pose
-between swings, and dead-reckons the cursor slightly ahead of the packet
-stream so it never feels laggy.
+## Tech Stack
 
-## Troubleshooting
+- **Node.js**: Backend server and game coordination.
+- **Socket.IO**: Real-time communication between phones and the server.
+- **Three.js**: Browser-based rendering for web games.
+- **Express.js**: Web server framework.
+- **Playwright**: Automated browser testing.
 
-- **Cannot connect:** check both devices are on the same Wi-Fi, allow Node.js
-  through the firewall, and avoid guest networks that isolate devices.
-- **Buttons work but motion does not:** check HTTPS and motion permissions. If
-  the terminal reports an HTTP fallback, install OpenSSL and restart.
-- **Black screen:** enable WebGL 2 / hardware acceleration in the computer browser.
-- **No sound:** click the game to unlock audio and check its mute control.
+## Getting Started
 
-Set `PORT` to use another port, or `NO_OPEN=1` to skip auto-opening Chrome.
+### Prerequisites
+
+- Node.js v22 or above.
+
+### Installation and Running
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/pattssun/OpenWii.git
+   cd OpenWii
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Generate HTTPS certificates:
+   ```bash
+   npm run cert
+   ```
+
+4. Start the server:
+   ```bash
+   npm run start
+   ```
+
+5. Open the game interface in Chrome:
+   ```bash
+   npm run tv
+   ```
+
+## Project Structure
+
+```plaintext
+.
+├── core/                 # Core utilities like calibration, motion processing, and pointer handling.
+├── games/                # Game modules such as Mario Kart, Alien Attack, and Drawing.
+├── assets/               # Game assets including audio and 3D models.
+├── scripts/              # Utility scripts for tasks like generating certificates.
+├── tests/                # Test cases for various system components.
+├── LICENSE               # MIT license file.
+└── server.js             # Entry point for the Node.js server.
+```
+
+## Testing
+
+Run the unit tests for core and game components:
+
+```bash
+npm run test:unit
+```
+
+Browser-specific Mario Kart tests can be executed as follows:
+
+```bash
+npm run test:kart-browser
+npm run test:kart-public
+```
+
+## Roadmap
+
+- [ ] Document the messaging protocol, including schemas and versioning guidelines.
+- [ ] Add more automated test coverage for calibration and multiplayer scenarios.
+- [ ] Include a latency and packet-loss test harness for network simulations.
+- [ ] Separate core modules into well-defined public APIs.
 
 ## License
 
-[MIT](LICENSE) for the software. This independent fan project is not
-affiliated with or endorsed by Nintendo.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+Built by [Alicia Goh](https://github.com/EF361)
